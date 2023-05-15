@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    "paths": {
+      "test/*": [
+        "test/*"
+      ],
+    },
     "target": "ES2018",
     "module": "commonjs",
     "lib": [
@@ -26,5 +31,5 @@
   "exclude": [
     "node_modules",
     "cdk.out"
-  ]
+  ],
 }
