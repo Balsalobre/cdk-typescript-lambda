@@ -1,99 +1,103 @@
-import { Handler } from 'aws-lambda';
-
-import { DynamoDB } from 'aws-sdk';
+import { Handler, Context, APIGatewayEvent } from "aws-lambda";
+import { DynamoDB } from "aws-sdk";
+import { HttpMethod, Item } from "./interfaces/function";
 
 const dynamo = new DynamoDB.DocumentClient();
-const TABLE_NAME : string = process.env.HELLO_TABLE_NAME!;
+const TABLE_NAME = process.env.HELLO_TABLE_NAME;
 
-export const handler: Handler = async (event, context) => {
-
-    const method = event.requestContext.http.method;
-
-    if (method === 'GET') {
-        return await getHello(event)
-     } else if (method === 'POST') {
-        return await save(event);
-     } else {
-         return {
-             statusCode: 400, 
-             body: 'Not a valid operation'
-         };
-     }  
+const save: HttpMethod = async (event: APIGatewayEvent) => {
+  const name = getNameFromQueryParameter(event);
+  const item: Item = {
+    name,
+    date: Date.now(),
+  };
+  const savedItem = await saveItem(item);
+  return {
+    statusCode: 200,
+    body: JSON.stringify(savedItem),
+  };
 };
 
-async function save(event : any) {
-    const name = event.queryStringParameters.name;
-  
-    const item = {
-      name: name,
-      date: Date.now(),
-    };
-  
-    console.log(item);
-    const savedItem = await saveItem(item);
-  
+const getNameFromQueryParameter = ({
+  queryStringParameters,
+}: APIGatewayEvent): string => {
+  const { name } = queryStringParameters ?? {};
+  if (typeof name !== "string") {
+    throw new Error("Missing or invalid name parameter");
+  }
+  return name;
+};
+
+const generateGreetingMessage = (date: number): string => {
+  const savedAt = new Date(date);
+  return `Was greeted on ${savedAt.getDate()}/${
+    savedAt.getMonth() + 1
+  }/${savedAt.getFullYear()}`;
+}
+
+const getHello: HttpMethod = async (event: APIGatewayEvent) => {
+  const name = getNameFromQueryParameter(event);
+  const item = await getItem(name);
+
+  if (item && item.date) {
+    const message = generateGreetingMessage(item.date);
     return {
       statusCode: 200,
-      body: JSON.stringify(savedItem),
+      body: JSON.stringify(message),
     };
+  }
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify("Nobody was greeted with that name"),
   };
-  
-async function getHello(event : any ) {
-    const name = event.queryStringParameters.name;
+};
 
-    const item = await getItem(name);
-  
-    if (item !== undefined && item.date) {
-      const d = new Date(item.date);
-
-      const message = `Was greeted on ${d.getDate()}/${
-        d.getMonth() + 1
-      }/${d.getFullYear()}`;
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify(message),
-      };
-      
-    } else {
- 
-      const message = "Nobody was greeted with that name";
-      return {
-        statusCode: 200,
-        body: JSON.stringify(message),
-      };
-    }
+export const handler: Handler = async (
+  event: APIGatewayEvent,
+  context: Context
+) => {
+  const httpMethods: Record<string, HttpMethod> = {
+    'GET': getHello,
+    'POST': save,
   };
-  
-async function getItem(name : string ) {
+  const { httpMethod } = event;
+  const selectedMethod = httpMethods[httpMethod];
 
-    const params : DynamoDB.DocumentClient.GetItemInput = {
-        Key: {
-        name: name,
-      },
-      TableName: TABLE_NAME,
+  if (selectedMethod) {
+    return await selectedMethod(event, context);
+  } else {
+    return {
+      statusCode: 400,
+      body: "Invalid method",
     };
-    
-    return dynamo
-      .get(params)
-      .promise()
-      .then((result) => {
-        console.log(result);
-        return result.Item;
-      });
+  }
+};
+
+export const getItem2 = (saludo: string): string => {
+  return saludo;
 }
-  
-async function saveItem(item : any) {
 
-    const params : DynamoDB.DocumentClient.PutItemInput = {
-      TableName: TABLE_NAME,
-      Item: item,
-    };
-  
-    return dynamo
-      .put(params)
-      .promise()
-      .then(() => {
-        return item;
-      });
+export const getItem = async (name: string): Promise<Item | undefined> => {
+  if (!TABLE_NAME) return;
+  const params: DynamoDB.DocumentClient.GetItemInput = {
+    Key: {
+      name: name,
+    },
+    TableName: TABLE_NAME,
+  };
+
+  const { Item } = await dynamo.get(params).promise();
+  return Item as Item;
+}
+
+export const saveItem = async (item: Item): Promise<Item | undefined> => {
+  if (!TABLE_NAME) return;
+  const params: DynamoDB.DocumentClient.PutItemInput = {
+    TableName: TABLE_NAME,
+    Item: item,
+  };
+
+  await dynamo.put(params).promise();
+  return item;
 }

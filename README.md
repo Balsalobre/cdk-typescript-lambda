@@ -1,45 +1,39 @@
-# Build your Lambda with Typescript using AWS CDK
+# Lambda con Typescript usando AWS CDK
 
 _Infrastructure as code framework used_: AWS CDK
 _AWS Services used_: AWS Lambda, AWS DynamoDB
 
-## Summary of the demo
+## Mantener actualizado el proyecto
 
-In this demo you will see:
+Para mantener actualizado el proyecto, ejecutar:
 
-- How to use Typescript in your Lambda functions and how to deploy it easily using AWS CDK
+```bash
+npm install -g aws-cdk
+```
 
-This demo is part of a video posted in FooBar Serverless channel. You can check the video to see the whole demo.
-
-Important: this application uses various AWS services and there are costs associated with these services after the Free Tier usage - please see the AWS Pricing page for details. You are responsible for any AWS costs incurred. No warranty is implied in this example.
-
-## Requirements
+## Requisitos
 
 - AWS CLI already configured with Administrator permission
 - AWS CDK - v2
 - NodeJS 14.x installed
 - CDK bootstrapped in your account
 
-## Deploy this demo
+## Despliega esta demo
 
-Deploy the project to the cloud:
+Despliega el proyecto en la nube:
 
 ```
 cdk synth
 cdk deploy
 ```
 
-When asked about functions that may not have authorization defined, answer (y)es. The access to those functions will be open to anyone, so keep the app deployed only for the time you need this demo running.
+Cuando se te pregunte acerca de funciones que pueden no tener autorización definida, responde (y)es. El acceso a esas funciones estará abierto para cualquiera, así que mantén la aplicación desplegada sólo por el tiempo que necesites esta demostración en funcionamiento.
 
-To delete the app:
+Para eliminar la aplicación:
 
 ```
 cdk destroy
 ```
-
-## Links related to this code
-
-- Video with more details: https://youtu.be/CeqwpYhlHbQ
 
 ### AWS CDK useful commands
 
